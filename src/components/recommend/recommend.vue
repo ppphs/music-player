@@ -1,5 +1,5 @@
 <template>
-  <div class="recommend">
+  <div class="recommend" ref="wrapper">
     <swiper class="swiper-container" :options="swiperOption" ref="swiperContainer" width="100%">
       <swiper-slide :key="item.id" v-for="item in recommends" v-html="_setImage(item.linkUrl, item.picUrl)"></swiper-slide>
       <div class="swiper-pagination" slot="pagination"></div>
@@ -50,6 +50,19 @@ export default {
   created () {
     this._getRecommend()
     this._getSongList()
+  },
+  beforeRouteEnter (to, from, next) { // 解决组件切换scrollTop被重置
+    next(vm => {
+      vm.$refs.wrapper.scrollTop = vm.$store.state.recommendScrollTop
+    })
+  },
+  beforeRouteLeave (to, from, next) {
+    let payload = {
+      name: 'recommend',
+      position: this.$refs.wrapper.scrollTop
+    }
+    this.$store.commit('saveScrollTop', payload)
+    next()
   },
   methods: {
     _getRecommend () {

@@ -3,7 +3,7 @@
     <ul class="wrapper" id="wrapper" ref="wrapper" @scroll="wrapperScroll">
       <li class="item" :nav-title="singerItem.title.slice(0, 1)" v-for="(singerItem, index) in singers" :key="index">
         <h2 class="title">{{ singerItem.title }}</h2>
-        <div class="singer" v-for="(singer, singerIndex) in singerItem.items" :key="singerIndex">
+        <div @click="showDetail(singer.id)" class="singer" v-for="(singer, singerIndex) in singerItem.items" :key="singerIndex">
           <div class="avatar">
             <img v-lazy="singer.avatar" :alt="singer.name">
           </div>
@@ -16,6 +16,7 @@
         <li :class="[{item: true}, {highLight: initialHighLight[index]}]" v-for="(text, index) in titleName" :key="index">{{ text }}</li>
       </ul>
     </nav>
+    <router-view></router-view>
   </div>
 </template>
 
@@ -38,6 +39,19 @@ export default {
   created () {
     this._getSingerList()
   },
+  beforeRouteEnter (to, from, next) { // 解决组件切换scrollTop被重置
+    next(vm => {
+      vm.$refs.wrapper.scrollTop = vm.$store.state.singerScrollTop
+    })
+  },
+  beforeRouteLeave (to, from, next) {
+    let payload = {
+      name: 'singer',
+      position: this.$refs.wrapper.scrollTop
+    }
+    this.$store.commit('saveScrollTop', payload)
+    next()
+  },
   methods: {
     _getSingerList () {
       getSingerList().then((res) => {
@@ -45,12 +59,12 @@ export default {
           this.singers = this._normalizeSingerList(res.data.list)
           this.$nextTick(function () { // 更新了数据要等到dom更新之后才能调用
             this.initHeightArr() // 先要初始化高度再去代理
-            this.proxyWrapper()
+            this.proxyWrapper() // 代理wrapper dom
           })
         }
       })
     },
-    _normalizeSingerList (list) {
+    _normalizeSingerList (list) { // 数组化数据
       let map = {
         hot: {
           title: '热门',
@@ -110,7 +124,7 @@ export default {
       this.move(currentItem.textContent)
     },
     wrapperScroll () {
-      this.$refs.wrapper.scrollTop = this.$refs.wrapper.scrollTop
+      this.proxyWrapperObj.scrollTop = this.$refs.wrapper.scrollTop
     },
     initHeightArr () {
       this.heightArr = []
@@ -121,7 +135,7 @@ export default {
     },
     proxyWrapper () {
       let that = this
-      let proxyWrapperObj = new Proxy(that.$refs.wrapper, {
+      this.proxyWrapperObj = new Proxy(that.$refs.wrapper, {
         get (target, propKey, receiver) {
           return target[propKey]
         },
@@ -142,7 +156,10 @@ export default {
           return Reflect.set(target, key, value, receiver)
         }
       })
-      this.$refs.wrapper = proxyWrapperObj
+      // this.$refs.wrapper = proxyWrapperObj // 不能覆盖原生的dom因为这样在beforeRouteEnter时候设置scrollTop会失败
+    },
+    showDetail (id) {
+      this.$router.push(`/singer/${id}`)
     }
   }
 }
