@@ -3,7 +3,7 @@
     <ul class="wrapper" id="wrapper" ref="wrapper" @scroll="wrapperScroll">
       <li class="item" :nav-title="singerItem.title.slice(0, 1)" v-for="(singerItem, index) in singers" :key="index">
         <h2 class="title">{{ singerItem.title }}</h2>
-        <div @click="showDetail(singer.id)" class="singer" v-for="(singer, singerIndex) in singerItem.items" :key="singerIndex">
+        <div @click="showDetail(singer)" class="singer" v-for="(singer, singerIndex) in singerItem.items" :key="singerIndex">
           <div class="avatar">
             <img v-lazy="singer.avatar" :alt="singer.name">
           </div>
@@ -16,7 +16,9 @@
         <li :class="[{item: true}, {highLight: initialHighLight[index]}]" v-for="(text, index) in titleName" :key="index">{{ text }}</li>
       </ul>
     </nav>
-    <router-view></router-view>
+    <transition name="showDetail">
+      <router-view :detailSinger="detailSinger"></router-view>
+    </transition>
   </div>
 </template>
 
@@ -33,7 +35,8 @@ export default {
     return {
       singers: [],
       titleName: ['热'],
-      initialHighLight: [true, false] // 先加入热门和其他类
+      initialHighLight: [true, false], // 先加入热门和其他类
+      detailSinger: {}
     }
   },
   created () {
@@ -75,8 +78,9 @@ export default {
         let key = item.Findex
         if (index < HOT_SINGER_LENGTH) {
           map.hot.items.push(new Singer({
-            id: item.Fsinger_mid,
-            name: item.Fsinger_name
+            mid: item.Fsinger_mid,
+            name: item.Fsinger_name,
+            id: item.Fsinger_id
           }))
         }
         if (!map[key]) {
@@ -86,8 +90,9 @@ export default {
           }
         }
         map[key].items.push(new Singer({
-          id: item.Fsinger_mid,
-          name: item.Fsinger_name
+          mid: item.Fsinger_mid,
+          name: item.Fsinger_name,
+          id: item.Fsinger_id
         }))
       })
 
@@ -124,7 +129,11 @@ export default {
       this.move(currentItem.textContent)
     },
     wrapperScroll () {
-      this.proxyWrapperObj.scrollTop = this.$refs.wrapper.scrollTop
+      try {
+        this.proxyWrapperObj.scrollTop = this.$refs.wrapper.scrollTop
+      } catch (error) {
+        // 这里有一个接口报错。。。暂时没找到原因
+      }
     },
     initHeightArr () {
       this.heightArr = []
@@ -152,14 +161,17 @@ export default {
                 Vue.set(that.initialHighLight, i, true)
               }
             }
+            // that.$refs.wrapper.scrollTop = value
           }
           return Reflect.set(target, key, value, receiver)
         }
       })
       // this.$refs.wrapper = proxyWrapperObj // 不能覆盖原生的dom因为这样在beforeRouteEnter时候设置scrollTop会失败
     },
-    showDetail (id) {
-      this.$router.push(`/singer/${id}`)
+    showDetail (singer) {
+      this.$router.push(`/singer/${singer.mid}`)
+      this.$store.commit('showDetail', singer.id) // 用vuex管理detail的歌手信息
+      this.detailSinger = singer
     }
   }
 }
@@ -223,4 +235,8 @@ export default {
         font-size: $font-size-small
       .highLight
         color: yellow
+  .showDetail-enter-active, .showDetail-leave-active
+    transition: all 0.3s ease-in
+  .showDetail-enter, .showDetail-leave-to
+    transform: translate3d(100%, 0, 0)
 </style>
