@@ -22,7 +22,7 @@
       </div>
     </div>
     <ul class="container">
-      <li v-for="(song, index) in songs" :key="index" class="song">
+      <li @click="selectItem(song, index)" v-for="(song, index) in songs" :key="index" class="song">
         <h2 class="name">{{ song.name }}</h2>
         <div class="description">{{ `${song.singer}${song.albumdesc ? (' · ' + song.albumdesc) : ''}` }}</div>
       </li>
@@ -43,6 +43,7 @@ import {getSingerDetail} from 'api/singer.js'
 import {ERR_OK} from 'api/config'
 import {createSong} from 'common/js/song'
 import loading from 'base/loading/loading'
+import {mapActions} from 'vuex'
 
 export default {
   data () {
@@ -99,7 +100,16 @@ export default {
     },
     showMoreTrigger () {
       this.singerDescShow = !this.singerDescShow
-    }
+    },
+    selectItem (song, index) {
+      this.selectPlay({
+        list: this.songs,
+        index
+      })
+    },
+    ...mapActions([
+      'selectPlay'
+    ])
   },
   components: {
     loading
