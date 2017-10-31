@@ -1,5 +1,5 @@
 <template>
-  <div class="rank">
+  <div class="singers">
     <ul class="wrapper" id="wrapper" ref="wrapper" @scroll="wrapperScroll">
       <li class="item" :nav-title="singerItem.title.slice(0, 1)" v-for="(singerItem, index) in singers" :key="index">
         <h2 class="title">{{ singerItem.title }}</h2>
@@ -180,10 +180,11 @@ export default {
 <style lang="stylus">
 @import '~common/stylus/variable.styl'
 
-.rank
+.singers
   position: absolute
   top: 88px
   bottom: 0
+  width: 100%
   .wrapper
     -webkit-overflow-scrolling: touch
     height: 100%
